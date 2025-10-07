@@ -8,22 +8,24 @@ import RecommendComponent from "./components/Recommend/Recommend.jsx";
 
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-
+const IMAGES_URL = `${SERVER_URL}/api/closet/images/`;
 
 export default function App() {
-  const [selectedImageId, setSelectedImageId] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedItems, setSelectedItems] = useState([]);
 
-  useEffect(() => {
-    if (!selectedImageId) return;
-    const fetchImage = async () => {
-      const resp = await fetch(`${SERVER_URL}/api/closet/images/get-image?id=${selectedImageId}`);
-      const data = await resp.json();
-      setSelectedImage(data);
-    }
-    fetchImage();
-  }, [selectedImageId]);
+  // useEffect(() => {
+  //   console.log("App", "selectedImageId", selectedImageId);
+  //   if (!selectedImageId) return;
+  //   const fetchImage = async () => {
+  //     const resp = await fetch(IMAGES_URL, {
+  //       method: "GET",
+  //       body: JSON.stringify({id: selectedImageId}),
+  //     });
+  //     const data = await resp.json();
+  //     setSelectedImage(data);
+  //   }
+  //   fetchImage();
+  // }, [selectedImageId]);
 
 
   return (
@@ -38,18 +40,18 @@ export default function App() {
             <FlowComponent />
 
             <ImageComponent
-              setSelectedImageId={setSelectedImageId}
+              setSelectedImage={setSelectedImage}
             />
 
-            { selectedImage && <ItemComponent
-              selectedImage={selectedImage}
-              selectedImageId={selectedImageId}
-              setSelectedImageId={setSelectedImageId}
-            />}
+            {/*{ selectedImage && <ItemComponent*/}
+            {/*  selectedImage={selectedImage}*/}
+            {/*  selectedImageId={selectedImageId}*/}
+            {/*  setSelectedImageId={setSelectedImageId}*/}
+            {/*/>}*/}
 
 
-            { selectedImage && <RecommendComponent
-            />}
+            {/*{ selectedImage && <RecommendComponent*/}
+            {/*/>}*/}
 
 
 

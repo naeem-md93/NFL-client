@@ -1,68 +1,69 @@
 import {useRef, useState, useEffect} from "react";
 
+import {fetchData} from "../utils.js";
+
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 const IMAGES_URL = `${SERVER_URL}/api/closet/images/`;
 
 
-export default function ImageComponent({setSelectedImageId}) {
-
+export default function ImageComponent({setSelectedImage}) {
+  const [refresh, setRefresh] = useState(0);
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const resp = await fetchImages();
+    if (refresh === 0) {
+      (async () => {
+          setIsLoading(true);
+          try {
+            const data = await fetchData(
+              "useEffect (fetch images)",
+              IMAGES_URL,
+              {method: "GET"}
+            );
+            setImages(data);
+          } catch (err) {
+            setImages([]);
+            console.error(`useEffect err: ${err.statusText}`);
+          } finally {
+            setIsLoading(false);
+          }
+        }
+      )();
     }
-    const resp = fetchData();
-  }, [])
+  }, [refresh])
 
-  // Requests (API)
+  async function handleDelete(id) {
+    await fetchData(
+      `handleDelete (deleting ${id})`,
+      IMAGES_URL,
+      {
+        method: "DELETE",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id})
+      }
+    );
 
-  async function fetchImages() {
-    setIsLoading(true);
-    const res = await fetch(IMAGES_URL, { method: 'GET'});
-    const data = await res.json();
-    setImages(Array.isArray(data) ? data : []);
-    setIsLoading(false);
-  }
-
-  async function handleDelete(id, refresh=false) {
-    const res = await fetch(IMAGES_URL, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    });
-
-    if (refresh) {
-      await fetchImages();
-    }
+    setImages(images => images.filter(img => img.id !== id));
+    setRefresh(refresh + 1);
   }
 
   async function clearAll() {
-    await Promise.all(images.map((it) => handleDelete(it.id)));
-    await fetchImages();
+    await Promise.all(images.map((it) => {
+      fetchData(
+        `clearAll (deleting ${it.id})`,
+        IMAGES_URL,
+        {method: "DELETE", headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: it.id})},
+      )
+    }));
+    setImages([]);
+    setRefresh(refresh + 1);
   }
 
-  async function handleCreate(formData, refresh=false) {
-
-    const res = await fetch(IMAGES_URL, {
-      method: 'POST',
-      body: formData,
-    });
-
-    console.log(res.status);
-    const text = await res.text(); // or await res.json().catch(()=>null)
-    console.log(text);
-
-    if (refresh) {
-      await fetchImages();
-    }
-  }
-
-  async function handleFilesChange(e) {
+  async function handleFilesUpload(e) {
 
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -72,10 +73,16 @@ export default function ImageComponent({setSelectedImageId}) {
 
     setIsUploading(true);
 
-    await handleCreate(fData, false);
-    await fetchImages(); // refresh canonical list after upload
+    const data = await fetchData(
+      `handleFilesUpload (creating ${files})`,
+      IMAGES_URL,
+      {method: "POST", body: fData}
+    )
+    setImages(images.concat(data));
+
     setIsUploading(false);
     e.target.value = null; // reset input
+    setRefresh(refresh + 1);
   }
 
   // Functionalities
@@ -102,7 +109,7 @@ export default function ImageComponent({setSelectedImageId}) {
             accept="image/*"
             multiple
             className="hidden"
-            onChange={handleFilesChange}
+            onChange={handleFilesUpload}
           />
 
           <button onClick={openFilePicker} disabled={isUploading} className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors duration-300 inline-flex items-center">
@@ -127,12 +134,12 @@ export default function ImageComponent({setSelectedImageId}) {
             { images.map((it) => (
               <div key={it.id} className="border border-gray-200 rounded-lg overflow-hidden group hover:shadow-md transition-shadow duration-300">
                 <div className="relative h-48 bg-gray-100">
-                  <img src={it.url} alt={it.name || `item_${it.id}`} className="w-full h-full object-cover" />
+                  <img src={it.url} alt={it.name || `image_${it.id}`} className="w-full h-full object-cover" />
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
-                    <button onClick={() => handleDelete(it.id, true)} className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50 transition-colors duration-300">
+                    <button onClick={() => handleDelete(it.id)} className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50 transition-colors duration-300">
                       <span className="material-symbols-outlined text-red-500">delete</span>
                     </button>
-                    <button onClick={() => setSelectedImageId(it.id)} className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-colors duration-300">
+                    <button onClick={() => setSelectedImage(it)} className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-colors duration-300">
                       <span className="material-symbols-outlined text-green-500">select_check_box</span>
                     </button>
                   </div>
@@ -140,8 +147,8 @@ export default function ImageComponent({setSelectedImageId}) {
 
                 <div className="p-3">
                  <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm p-2 border rounded-md w-full mr-2">{it.name || it.id}</span>
-                  <span className="text-xs text-gray-500">{it.size ? `${Math.round(it.size/1024)} KB` : ''}</span>
+                  <span className="text-sm p-2 border rounded-md w-70 mr-2">{it.name || it.id}</span>
+                  <span className="text-xs text-gray-500">XXX KB</span>
                  </div>
                 </div>
               </div>
