@@ -1,13 +1,269 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>nfl-client</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Lato&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFL</title>
+</head>
+<body>
+<div id="root"></div>
+<script type="module" src="/src/main.jsx"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    content: ["./src/**/*.{html,js}"],
+    theme: {"name":"Bluewave","fontFamily":{"sans":["Open Sans","ui-sans-serif","system-ui","sans-serif","\"Apple Color Emoji\"","\"Segoe UI Emoji\"","\"Segoe UI Symbol\"","\"Noto Color Emoji\""]},"extend":{"fontFamily":{"title":["Lato","ui-sans-serif","system-ui","sans-serif","\"Apple Color Emoji\"","\"Segoe UI Emoji\"","\"Segoe UI Symbol\"","\"Noto Color Emoji\""],"body":["Open Sans","ui-sans-serif","system-ui","sans-serif","\"Apple Color Emoji\"","\"Segoe UI Emoji\"","\"Segoe UI Symbol\"","\"Noto Color Emoji\""]},"colors":{"neutral":{"50":"#f7f7f7","100":"#eeeeee","200":"#e0e0e0","300":"#cacaca","400":"#b1b1b1","500":"#999999","600":"#7f7f7f","700":"#676767","800":"#545454","900":"#464646","950":"#282828"},"primary":{"50":"#f3f1ff","100":"#e9e5ff","200":"#d5cfff","300":"#b7a9ff","400":"#9478ff","500":"#7341ff","600":"#631bff","700":"#611bf8","800":"#4607d0","900":"#3c08aa","950":"#220174","DEFAULT":"#611bf8"}}},"fontSize":{"xs":["12px",{"lineHeight":"19.200000000000003px"}],"sm":["14px",{"lineHeight":"21px"}],"base":["16px",{"lineHeight":"25.6px"}],"lg":["18px",{"lineHeight":"27px"}],"xl":["20px",{"lineHeight":"28px"}],"2xl":["24px",{"lineHeight":"31.200000000000003px"}],"3xl":["30px",{"lineHeight":"36px"}],"4xl":["36px",{"lineHeight":"41.4px"}],"5xl":["48px",{"lineHeight":"52.800000000000004px"}],"6xl":["60px",{"lineHeight":"66px"}],"7xl":["72px",{"lineHeight":"75.60000000000001px"}],"8xl":["96px",{"lineHeight":"100.80000000000001px"}],"9xl":["128px",{"lineHeight":"134.4px"}]},"borderRadius":{"none":"0px","sm":"6px","DEFAULT":"12px","md":"18px","lg":"24px","xl":"36px","2xl":"48px","3xl":"72px","full":"9999px"},"spacing":{"0":"0px","1":"4px","2":"8px","3":"12px","4":"16px","5":"20px","6":"24px","7":"28px","8":"32px","9":"36px","10":"40px","11":"44px","12":"48px","14":"56px","16":"64px","20":"80px","24":"96px","28":"112px","32":"128px","36":"144px","40":"160px","44":"176px","48":"192px","52":"208px","56":"224px","60":"240px","64":"256px","72":"288px","80":"320px","96":"384px","px":"1px","0.5":"2px","1.5":"6px","2.5":"10px","3.5":"14px"}},
+    plugins: [],
+    important: '#webcrumbs'
+  };
+</script>
+
+<!--     Interaction script for the Virtual Try-On-->
+<!--    <script>-->
+<!--      (function(){-->
+<!--        // elements-->
+<!--        const uploadBtn = document.getElementById('upload-photo-btn');-->
+<!--        const fileInput = document.getElementById('user-photo-input');-->
+<!--        const userPhoto = document.getElementById('user-photo');-->
+<!--        const stage = document.getElementById('tryon-stage');-->
+<!--        const stageEmpty = document.getElementById('stage-empty');-->
+<!--        const recButtons = document.querySelectorAll('.add-rec-btn');-->
+<!--        const exportBtn = document.getElementById('export-btn');-->
+<!--        const clearOverlaysBtn = document.getElementById('clear-overlays-btn');-->
+<!--        const clearPhotoBtn = document.getElementById('clear-photo-btn');-->
+
+<!--        let overlays = []; // {el, id}-->
+<!--        let selectedOverlay = null;-->
+
+<!--        // open file picker-->
+<!--        uploadBtn.addEventListener('click', () => fileInput.click());-->
+<!--        fileInput.addEventListener('change', async (e) => {-->
+<!--          const f = e.target.files && e.target.files[0];-->
+<!--          if (!f) return;-->
+<!--          const reader = new FileReader();-->
+<!--          reader.onload = () => {-->
+<!--            userPhoto.src = reader.result;-->
+<!--            userPhoto.classList.remove('hidden');-->
+<!--            stageEmpty.style.display = 'none';-->
+<!--            // reset overlays positions relative to container-->
+<!--            // nothing else-->
+<!--          };-->
+<!--          reader.readAsDataURL(f);-->
+<!--        });-->
+
+<!--        clearPhotoBtn.addEventListener('click', () => {-->
+<!--          userPhoto.src = '';-->
+<!--          userPhoto.classList.add('hidden');-->
+<!--          stageEmpty.style.display = '';-->
+<!--        });-->
+
+<!--        // add recommended item as overlay-->
+<!--        recButtons.forEach(btn => {-->
+<!--          btn.addEventListener('click', () => {-->
+<!--            const src = btn.dataset.src;-->
+<!--            addOverlay(src);-->
+<!--          });-->
+<!--        });-->
+
+<!--        function addOverlay(src){-->
+<!--          const wrapper = document.createElement('div');-->
+<!--          wrapper.className = 'overlay-item';-->
+<!--          // initial size/position: center small-->
+<!--          wrapper.style.width = '180px';-->
+<!--          wrapper.style.height = '180px';-->
+<!--          wrapper.style.left = (stage.clientWidth/2 - 90) + 'px';-->
+<!--          wrapper.style.top = (stage.clientHeight/2 - 90) + 'px';-->
+<!--          wrapper.setAttribute('tabindex','0');-->
+
+<!--          const img = document.createElement('img');-->
+<!--          img.src = src;-->
+<!--          img.alt = 'overlay';-->
+
+<!--          const handle = document.createElement('div');-->
+<!--          handle.className = 'overlay-handle';-->
+
+<!--          wrapper.appendChild(img);-->
+<!--          wrapper.appendChild(handle);-->
+<!--          stage.appendChild(wrapper);-->
+
+<!--          const id = Date.now() + Math.random().toString(36).slice(2,7);-->
+<!--          overlays.push({el: wrapper, id});-->
+
+<!--          makeInteractive(wrapper, handle);-->
+
+<!--          // select newly added-->
+<!--          selectOverlay(wrapper);-->
+<!--        }-->
+
+<!--        function selectOverlay(el){-->
+<!--          // highlight: add subtle ring-->
+<!--          overlays.forEach(o => o.el.style.boxShadow = 'none');-->
+<!--          el.style.boxShadow = '0 6px 18px rgba(99, 102, 241, 0.12), 0 1px 2px rgba(0,0,0,0.04)';-->
+<!--          selectedOverlay = el;-->
+<!--        }-->
+
+<!--        function deselectAll(){-->
+<!--          overlays.forEach(o => o.el.style.boxShadow = 'none');-->
+<!--          selectedOverlay = null;-->
+<!--        }-->
+
+<!--        // Interaction: drag and resize-->
+<!--        function makeInteractive(wrapper, handle){-->
+<!--          // dragging-->
+<!--          let dragging = false;-->
+<!--          let resize = false;-->
+<!--          let startX=0, startY=0, startW=0, startH=0, startL=0, startT=0;-->
+
+<!--          wrapper.addEventListener('pointerdown', (e) => {-->
+<!--            // if clicked handle, let that do resizing-->
+<!--            if (e.target === handle) {-->
+<!--              resize = true;-->
+<!--              startX = e.clientX; startY = e.clientY;-->
+<!--              startW = wrapper.offsetWidth; startH = wrapper.offsetHeight;-->
+<!--              e.preventDefault();-->
+<!--              wrapper.setPointerCapture(e.pointerId);-->
+<!--              selectOverlay(wrapper);-->
+<!--              return;-->
+<!--            }-->
+<!--            dragging = true;-->
+<!--            startX = e.clientX; startY = e.clientY;-->
+<!--            startL = parseFloat(wrapper.style.left || 0); startT = parseFloat(wrapper.style.top || 0);-->
+<!--            e.preventDefault();-->
+<!--            wrapper.setPointerCapture(e.pointerId);-->
+<!--            selectOverlay(wrapper);-->
+<!--          });-->
+
+<!--          wrapper.addEventListener('pointermove', (e) => {-->
+<!--            if (dragging) {-->
+<!--              const dx = e.clientX - startX;-->
+<!--              const dy = e.clientY - startY;-->
+<!--              wrapper.style.left = (startL + dx) + 'px';-->
+<!--              wrapper.style.top = (startT + dy) + 'px';-->
+<!--            } else if (resize) {-->
+<!--              const dx = e.clientX - startX;-->
+<!--              const dy = e.clientY - startY;-->
+<!--              // if shift held, scale proportionally-->
+<!--              if (e.shiftKey) {-->
+<!--                // pick the larger delta and apply to both w/h proportionally-->
+<!--                const delta = Math.max(dx, dy);-->
+<!--                wrapper.style.width = Math.max(30, startW + delta) + 'px';-->
+<!--                wrapper.style.height = Math.max(30, startH + delta) + 'px';-->
+<!--              } else {-->
+<!--                wrapper.style.width = Math.max(30, startW + dx) + 'px';-->
+<!--                wrapper.style.height = Math.max(30, startH + dy) + 'px';-->
+<!--              }-->
+<!--            }-->
+<!--          });-->
+
+<!--          const up = (e) => {-->
+<!--            dragging = false; resize = false;-->
+<!--            try {wrapper.releasePointerCapture(e.pointerId);} catch(e){/*ignore*/}-->
+<!--          };-->
+<!--          wrapper.addEventListener('pointerup', up);-->
+<!--          wrapper.addEventListener('pointercancel', up);-->
+
+<!--          // click to select-->
+<!--          wrapper.addEventListener('click', (e) => {-->
+<!--            e.stopPropagation();-->
+<!--            selectOverlay(wrapper);-->
+<!--          });-->
+
+<!--          // double click to remove-->
+<!--          wrapper.addEventListener('dblclick', () => {-->
+<!--            wrapper.remove();-->
+<!--            overlays = overlays.filter(o => o.el !== wrapper);-->
+<!--          });-->
+<!--        }-->
+
+<!--        // stage click: deselect-->
+<!--        stage.addEventListener('click', (e) => {-->
+<!--          if (e.target === stage || e.target === userPhoto || e.target === stageEmpty) deselectAll();-->
+<!--        });-->
+
+<!--        // clear overlays-->
+<!--        clearOverlaysBtn.addEventListener('click', () => {-->
+<!--          overlays.forEach(o => o.el.remove());-->
+<!--          overlays = [];-->
+<!--          selectedOverlay = null;-->
+<!--        });-->
+
+<!--        // export composed image: draw user photo and overlays to canvas-->
+<!--        exportBtn.addEventListener('click', async () => {-->
+<!--          if (!userPhoto.src) {-->
+<!--            alert('Please upload your photo first.');-->
+<!--            return;-->
+<!--          }-->
+<!--          // build canvas same size as stage element (use natural user photo size to keep quality)-->
+<!--          const rect = stage.getBoundingClientRect();-->
+<!--          const stageW = Math.max(600, rect.width);-->
+<!--          const stageH = Math.max(800, rect.height);-->
+
+<!--          // draw to canvas-->
+<!--          const canvas = document.createElement('canvas');-->
+<!--          canvas.width = stageW;-->
+<!--          canvas.height = stageH;-->
+<!--          const ctx = canvas.getContext('2d');-->
+
+<!--          // draw background (white)-->
+<!--          ctx.fillStyle = '#ffffff';-->
+<!--          ctx.fillRect(0,0,canvas.width,canvas.height);-->
+
+<!--          // draw user photo scaled to stage size while preserving aspect-->
+<!--          const img = new Image();-->
+<!--          img.crossOrigin = 'anonymous';-->
+<!--          img.src = userPhoto.src;-->
+<!--          await new Promise(res => img.onload = res);-->
+
+<!--          // compute fit into stage-->
+<!--          const scale = Math.min(stageW / img.width, stageH / img.height);-->
+<!--          const iw = img.width * scale;-->
+<!--          const ih = img.height * scale;-->
+<!--          const ox = (stageW - iw) / 2;-->
+<!--          const oy = (stageH - ih) / 2;-->
+<!--          ctx.drawImage(img, ox, oy, iw, ih);-->
+
+<!--          // draw overlays: compute each overlay position relative to stage element-->
+<!--          const stageRect = stage.getBoundingClientRect();-->
+<!--          for (let o of overlays){-->
+<!--            const el = o.el;-->
+<!--            const elRect = el.getBoundingClientRect();-->
+<!--            const left = elRect.left - stageRect.left;-->
+<!--            const top = elRect.top - stageRect.top;-->
+<!--            const w = elRect.width;-->
+<!--            const h = elRect.height;-->
+<!--            // load image-->
+<!--            const ovImg = new Image();-->
+<!--            ovImg.crossOrigin = 'anonymous';-->
+<!--            ovImg.src = el.querySelector('img').src;-->
+<!--            // await loaded-->
+<!--            await new Promise(r => ovImg.onload = r);-->
+<!--            // draw at same position (scale to canvas size)-->
+<!--            const drawLeft = left / stageRect.width * stageW;-->
+<!--            const drawTop = top / stageRect.height * stageH;-->
+<!--            const drawW = w / stageRect.width * stageW;-->
+<!--            const drawH = h / stageRect.height * stageH;-->
+<!--            ctx.drawImage(ovImg, drawLeft, drawTop, drawW, drawH);-->
+<!--          }-->
+
+<!--          // open export image in new tab-->
+<!--          const data = canvas.toDataURL('image/png');-->
+<!--          const win = window.open();-->
+<!--          if (win) {-->
+<!--            win.document.write('<img src="'+data+'" style="max-width:100%"/>');-->
+<!--          } else {-->
+<!--            // fallback: download-->
+<!--            const a = document.createElement('a');-->
+<!--            a.href = data;-->
+<!--            a.download = 'tryon.png';-->
+<!--            a.click();-->
+<!--          }-->
+<!--        });-->
+
+<!--      })();-->
+<!--    </script>-->
+</body>
 </html>
