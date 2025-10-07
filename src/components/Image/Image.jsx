@@ -147,8 +147,9 @@ export default function ImageComponent({setSelectedImage}) {
 
                 <div className="p-3">
                  <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm p-2 border rounded-md w-70 mr-2">{it.name || it.id}</span>
-                  <span className="text-xs text-gray-500">XXX KB</span>
+                   <span className="text-sm p-2 border rounded-md w-45 mr-2">{it.name || it.id}</span>
+                   <span className="text-sm p-2 border rounded-md w-25 mr-2 text-center">{it.source}</span>
+                   <span className="text-xs text-gray-500">XXX KB</span>
                  </div>
                 </div>
               </div>
