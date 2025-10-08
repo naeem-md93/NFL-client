@@ -68,21 +68,26 @@ export default function ImageComponent({setSelectedImage}) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const fData = new FormData();
-    for (const f of files) fData.append('files', f);
-
     setIsUploading(true);
 
-    const data = await fetchData(
-      `handleFilesUpload (creating ${files})`,
-      IMAGES_URL,
-      {method: "POST", body: fData}
-    )
-    setImages(images.concat(data));
-
-    setIsUploading(false);
-    e.target.value = null; // reset input
-    setRefresh(refresh + 1);
+    for (const f of files) {
+      try {
+        const tmpForm = new FormData();
+        tmpForm.append("file", f);
+        const res = await fetchData(
+          `handleFilesUpload (creating ${f.name})`,
+          IMAGES_URL,
+          {method: "POST", body: tmpForm}
+        )
+        setImages(prev => [...prev, res]);
+        setRefresh(r => r + 1);
+      } catch (err) {
+        console.error(`Error (handleFilesUpload): ${err.statusText}`);
+      } finally {
+        setIsUploading(false);
+      }
+    }
+    e.target.value = null;
   }
 
   // Functionalities
