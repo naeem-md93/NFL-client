@@ -1,47 +1,60 @@
-import React, {useEffect, useState} from "react";
-
+import React, { useEffect, useState } from "react";
+import { fetchData } from "../utils.js";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+const ITEMS_URL = `${SERVER_URL}/api/closet/items/`;
+const RECOMMENDATION_URL = `${SERVER_URL}/api/closet/recommendations/`;
+const DEFAULT_OCCASIONS = ["Casual", "Work", "Date Night", "Formal", "Workout", "Beach", "Party"];
 
 
-export default function RecommendComponent({ closetItems = [], selectedImage = null, onAddToCloset }) {
-
+export default function RecommendComponent({ selectedItems, setSelectedItems }) {
+  const [items, setItems] = useState([]); // all items fetched from server
   const [query, setQuery] = useState("");
-  const [occasions, setOccasions] = useState(new Set()); // e.g., "Casual","Work",...
-
-  const [budget, setBudget] = useState("Any budget");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [results, setResults] = useState(null);
 
+  const [occasions] = useState(new Set(DEFAULT_OCCASIONS));
+  const [selectedOccasions, setSelectedOccasions] = useState(new Set()); // e.g., "Casual","Work",...
 
-  const [items, setItems] = useState([]);
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [sources, setSources] = useState(new Set(["closet", "Alibaba", "Amazon", "Digikala"]));
+  // sources is a Set of source names discovered from items
+  const [sources, setSources] = useState(new Set());
+  // selectedSources is a Set of currently checked source names
   const [selectedSources, setSelectedSources] = useState(new Set());
 
-  // Fetch
   useEffect(() => {
-    const fetchItems = async () => {
-      const resp = await fetch(`${SERVER_URL}/api/closet/items/get-items`);
-      const data = await resp.json();
-      setItems(data);
-    }
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await fetchData("recommendation (useEffect)", ITEMS_URL, { method: "GET" });
 
-    const itemData = fetchItems();
-  }, [])
+        // ensure data is an array
+        const list = Array.isArray(data) ? data : [];
+        setItems(list);
 
-  function toggleItem(id) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
+        // collect sources and default-select them all
+        const srcSet = new Set();
+        list.forEach((it) => {
+          if (it.source) srcSet.add(it.source);
+        });
+        setSources(srcSet);
+
+        // default: select all sources on first load
+        setSelectedSources(new Set(srcSet));
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load items.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  console.log(items)
+  console.log(sources);
 
   function toggleOccasion(name) {
-    setOccasions((prev) => {
+    setSelectedOccasions((prev) => {
       const next = new Set(prev);
       if (next.has(name)) next.delete(name);
       else next.add(name);
@@ -49,72 +62,48 @@ export default function RecommendComponent({ closetItems = [], selectedImage = n
     });
   }
 
-  function clearSelections() {
-    setSelectedIds(new Set());
-    setQuery("");
-    setOccasions(new Set());
-    setResults(null);
-    setError("");
+  function toggleSource(name) {
+    setSelectedSources((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
   }
 
-  async function requestRecommendations() {
-    setError("");
-    // basic validation: require either a query or at least one selected item
-    if (!query.trim() && selectedIds.size === 0) {
-      setError("Please select at least one base item or enter a query describing what you want.");
-      return;
-    }
-
-    setLoading(true);
-    setResults(null);
-
-    const payload = {
-      image_id: selectedImage?.id || null,
-      selected_item_ids: Array.from(selectedIds),
-      query: query.trim(),
-      occasions: Array.from(occasions),
-      source: source,
-      budget: budget,
-    };
-
-    try {
-      // Replace with your real API endpoint
-      const res = await fetch("/api/recommendations/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        // try to parse error
-        const text = await res.text();
-        throw new Error(text || `Request failed ${res.status}`);
-      }
-
-      const data = await res.json();
-      // Expecting { outfits: [ { score, items: [{id,title,img}], explanation } ] }
-      setResults(data);
-    } catch (err) {
-      // fallback: produce a mock suggestion so the UI remains helpful
-      console.error(err);
-      const mock = {
-        outfits: [
-          {
-            score: 0.92,
-            items: [
-              { id: "s2", title: "Black T-Shirt", img: items[1]?.img },
-              { id: "p1", title: "Slim Navy Chinos", img: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246" },
-            ],
-            explanation: "Smart-casual combo: black tee + navy chinos works for many occasions.",
-          },
-        ],
-      };
-      setResults(mock);
-      setError("Recommendation API failed — showing a mock suggestion. Check server logs.");
-    } finally {
-      setLoading(false);
-    }
+  function selectAllSources() {
+    setSelectedSources(new Set(sources));
   }
+
+  function clearAllSources() {
+    setSelectedSources(new Set());
+  }
+
+  function toggleItemSelection(itemId) {
+    setSelectedItems((prev) => {
+      // prev is expected to be a Set passed in from parent
+      const next = new Set(prev || []);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  }
+
+  // Filter items by the selected sources
+  const filteredItems = items.filter((it) => selectedSources.size === 0 ? false : selectedSources.has(it.source));
+
+  // Helper: group items by source to render grouped sections
+  function groupBySource(list) {
+    const groups = {};
+    for (const it of list) {
+      const src = it.source || "unknown";
+      if (!groups[src]) groups[src] = [];
+      groups[src].push(it);
+    }
+    return groups;
+  }
+
+  const grouped = groupBySource(filteredItems);
 
   return (
     <section className="mb-16">
@@ -125,28 +114,114 @@ export default function RecommendComponent({ closetItems = [], selectedImage = n
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left / main */}
+          {/* Left / main controls */}
           <div className="lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium">Select Base Items for Your Outfit</h3>
-              <div className="text-sm text-gray-600">Selected: <span className="font-medium">{selectedIds.size}</span></div>
+              <div className="text-sm text-gray-600">Selected: <span className="font-medium">{selectedItems?.size || 0}</span></div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-              {items.map((it) => {
-                const checked = selectedIds.has(it.id);
-                return selectedSources.has(it?.source || "closet") ? (
-                  <label key={it.id} className={`border ${checked ? "border-primary-400 shadow-sm" : "border-gray-200"} rounded-lg p-3 transition-shadow duration-200 cursor-pointer relative group`}>
-                    <input type="checkbox" checked={checked} onChange={() => toggleItem(it.id)} className="absolute top-2 right-2 h-4 w-4 text-primary-600"/>
-                    <div className="h-32 bg-gray-100 rounded-md overflow-hidden mb-2">
-                      <img src={it.img} alt={it.caption} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="text-sm font-medium">{it.caption}</div>
-                    <div className="text-xs text-gray-500">{it.type}</div>
-                  </label>
-                ) : "";
-              })}
+            {/* Source filter row: checkboxes */}
+            <div className="mb-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-sm font-medium">Sources</div>
+                <button onClick={selectAllSources} className="text-xs px-2 py-1 border rounded bg-gray-50">Select all</button>
+                <button onClick={clearAllSources} className="text-xs px-2 py-1 border rounded bg-gray-50">Clear</button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {[...sources].map((sc) => {
+                  const checked = selectedSources.has(sc);
+                  // count items per source
+                  const count = items.filter((it) => it.source === sc).length;
+                  return (
+                    <label key={sc} className={`flex items-center p-2 border rounded-md ${checked ? "border-primary-400" : "border-gray-200"} cursor-pointer`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleSource(sc)}
+                        className="mr-2 h-4 w-4 text-primary-600"
+                      />
+                      <div className="text-sm">
+                        <div className="font-medium">{sc}</div>
+                        <div className="text-xs text-gray-500">{count} items</div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Items grid (grouped by source) */}
+            {loading ? (
+              <div className="py-12 text-center text-gray-500">Loading items…</div>
+            ) : (
+              <>
+                {selectedSources.size === 0 ? (
+                  <div className="py-8 text-center text-gray-500">No source selected. Choose sources to show items.</div>
+                ) : (
+                  Object.entries(grouped).map(([src, list]) => (
+                    <div key={src} className="mb-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium">{src} <span className="text-xs text-gray-500">({list.length})</span></h4>
+                        <div>
+                          <button
+                            onClick={() => {
+                              // quick select all items from this source
+                              setSelectedItems((prev) => {
+                                const next = new Set(prev || []);
+                                list.forEach((it) => next.add(it.id));
+                                return next;
+                              });
+                            }}
+                            className="text-xs px-2 py-1 border rounded bg-gray-50 mr-2"
+                          >
+                            Select all
+                          </button>
+                          <button
+                            onClick={() => {
+                              // clear items of this source from selection
+                              setSelectedItems((prev) => {
+                                const next = new Set(prev || []);
+                                list.forEach((it) => next.delete(it.id));
+                                return next;
+                              });
+                            }}
+                            className="text-xs px-2 py-1 border rounded bg-gray-50"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {list.map((it) => {
+                          const checked = (selectedItems && selectedItems.has(it.id));
+                          return (
+                            <label
+                              key={it.id}
+                              className={`border ${checked ? "border-primary-400 shadow-sm" : "border-gray-200"} rounded-lg p-3 transition-shadow duration-200 cursor-pointer relative group`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleItemSelection(it.id)}
+                                className="absolute top-2 right-2 h-4 w-4 text-primary-600"
+                              />
+                              <div className="h-32 bg-gray-100 rounded-md overflow-hidden mb-2">
+                                <img src={it.url} alt={it.caption || it.type} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="text-sm font-medium">{it.caption || `Item ${it.id.slice(0, 6)}`}</div>
+                              <div className="text-xs text-gray-500">{it.type} • {it.source}</div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </>
+            )}
 
             <h3 className="font-medium mb-2">Describe What You're Looking For</h3>
             <textarea
@@ -159,8 +234,8 @@ export default function RecommendComponent({ closetItems = [], selectedImage = n
             <div className="mb-6">
               <h3 className="font-medium mb-3">Occasion</h3>
               <div className="flex flex-wrap gap-2">
-                {["Casual", "Work", "Date Night", "Formal", "Workout", "Beach", "Party"].map((o) => {
-                  const active = occasions.has(o);
+                {[...occasions].map((o) => {
+                  const active = selectedOccasions.has(o);
                   return (
                     <button
                       key={o}
@@ -175,7 +250,13 @@ export default function RecommendComponent({ closetItems = [], selectedImage = n
                 <button
                   onClick={() => {
                     const custom = prompt("Add custom occasion:");
-                    if (custom) toggleOccasion(custom);
+                    if (!custom) return;
+                    // add to occasions set — since it's stored as Set in state const, we must update selectedOccasions only
+                    setSelectedOccasions((prev) => {
+                      const next = new Set(prev);
+                      next.add(custom);
+                      return next;
+                    });
                   }}
                   className="px-3 py-1 rounded-full bg-gray-50 text-gray-500 text-sm font-medium border border-dashed border-gray-300"
                 >
@@ -186,149 +267,68 @@ export default function RecommendComponent({ closetItems = [], selectedImage = n
 
             <div className="flex items-center gap-3 mb-6">
               <button
-                onClick={requestRecommendations}
                 disabled={loading}
                 className={`px-4 py-2 rounded-md text-white ${loading ? "bg-primary-300 cursor-wait" : "bg-primary-600 hover:bg-primary-700"}`}
+                onClick={() => {
+                  // placeholder: call your recommendation API (not implemented here)
+                  alert("Request Recommendation clicked — implement API call.");
+                }}
               >
                 {loading ? "Requesting..." : "Request Recommendation"}
               </button>
 
               <button
                 onClick={() => {
-                  // quick heuristic: auto-select top-2 items if none chosen
-                  if (selectedIds.size === 0 && items.length > 0) {
-                    setSelectedIds(new Set([items[0].id]));
+                  if (!selectedItems || selectedItems.size === 0) {
+                    // quick select first item if nothing selected
+                    if (items.length > 0) setSelectedItems(new Set([items[0].id]));
                   } else {
-                    clearSelections();
+                    // clear selection
+                    setSelectedItems(new Set());
                   }
                 }}
                 className="px-3 py-2 border rounded-md text-sm"
               >
-                {selectedIds.size === 0 ? "Quick Select" : "Clear"}
+                {(!selectedItems || selectedItems.size === 0) ? "Quick Select" : "Clear"}
               </button>
 
               <button
                 onClick={() => {
-                  // try a sample query
                   setQuery("Bright sporty matching set for morning run");
                 }}
                 className="px-3 py-2 border rounded-md text-sm"
               >
                 Use Example Query
               </button>
-
-              <div className="ml-auto text-sm text-gray-500">{error && <span className="text-red-500 mr-2">{error}</span>}</div>
             </div>
-
-            {/* Results panel */}
-            {results && (
-              <div className="mt-4 border-t pt-4">
-                <h4 className="font-medium mb-2">Recommendations</h4>
-                <div className="space-y-3">
-                  {results.outfits?.length ? (
-                    results.outfits.map((o, idx) => (
-                      <div key={idx} className="p-3 border rounded-lg flex gap-3 items-center">
-                        <div className="flex-shrink-0 w-20 grid grid-cols-2 gap-1">
-                          {o.items?.slice(0, 2).map((it, i) => (
-                            <img key={i} src={it.img || it.image || "https://via.placeholder.com/64"} className="w-full h-10 object-cover rounded" alt={it.title || it.id} />
-                          ))}
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{o.items?.map((x) => x.title).join(" + ")}</div>
-                          <div className="text-xs text-gray-500">{o.explanation || `Score: ${(o.score || 0).toFixed(2)}`}</div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              // accept outfit (example flow) - call onAddToCloset or POST to server
-                              if (onAddToCloset) onAddToCloset(o);
-                              alert("Added outfit to cart/closet (mock)");
-                            }}
-                            className="px-3 py-1 bg-primary-600 text-white rounded text-sm"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => {
-                              // open details or view full
-                              alert(JSON.stringify(o, null, 2));
-                            }}
-                            className="px-3 py-1 border rounded text-sm"
-                          >
-                            View
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-gray-500">No recommendations found.</div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Right column: source & advanced */}
+          {/* Right column: placeholder for advanced options or source summary */}
           <div className="lg:col-span-1 border-t lg:border-t-0 lg:border-l border-gray-200 lg:pl-6 pt-6 lg:pt-0">
-            <h3 className="font-medium mb-4">Recommendation Source</h3>
+            <h3 className="font-medium mb-4">Selected Sources</h3>
+            <div className="text-sm text-gray-600 mb-4">
+              {selectedSources.size} selected • {Array.from(selectedSources).join(", ")}
+            </div>
+
+            <h3 className="font-medium mb-2">Quick Filters</h3>
             <div className="space-y-3 mb-6">
               <label className="flex items-center p-3 border border-gray-200 rounded-lg hover:border-primary-400 cursor-pointer">
-                <input type="radio" name="source" checked={"my_closet"} onChange={() => setSource("my_closet")} className="mr-3 h-4 w-4 text-primary-600" />
+                <input
+                  type="radio"
+                  name="sourceMode"
+                  checked={true}
+                  readOnly
+                  className="mr-3 h-4 w-4 text-primary-600"
+                />
                 <div>
-                  <div className="font-medium">My Closet</div>
-                  <div className="text-xs text-gray-500">Recommend items I already own</div>
-                </div>
-              </label>
-              <label className="flex items-center p-3 border border-gray-200 rounded-lg hover:border-primary-400 cursor-pointer">
-                <input type="radio" name="source" checked={"online"} onChange={() => setSource("online")} className="mr-3 h-4 w-4 text-primary-600" />
-                <div>
-                  <div className="font-medium">Online Shopping</div>
-                  <div className="text-xs text-gray-500">Suggest items I can purchase</div>
-                </div>
-              </label>
-              <label className="flex items-center p-3 border border-gray-200 rounded-lg hover:border-primary-400 cursor-pointer">
-                <input type="checkbox" name="source" checked={"both"} onChange={() => setSource("both")} className="mr-3 h-4 w-4 text-primary-600" />
-                <div>
-                  <div className="font-medium">Both</div>
-                  <div className="text-xs text-gray-500">Mix of owned and new items</div>
+                  <div className="font-medium">Show selected sources</div>
+                  <div className="text-xs text-gray-500">Only items from checked sources appear</div>
                 </div>
               </label>
             </div>
 
-            <details className="mb-6">
-              <summary className="font-medium cursor-pointer hover:text-primary-600 transition-colors duration-300 flex items-center">
-                <span className="material-symbols-outlined mr-1">settings</span>
-                Advanced Options
-              </summary>
-              <div className="mt-3 space-y-4 pl-2">
-                <div>
-                  <label className="block text-sm mb-1">Budget (for shopping items)</label>
-                  <select value={budget} onChange={(e) => setBudget(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md text-sm">
-                    <option>Any budget</option>
-                    <option>Budget-friendly</option>
-                    <option>Mid-range</option>
-                    <option>Premium</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm mb-1">Diversity</label>
-                  <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
-                    <option>Balanced (default)</option>
-                    <option>Maximize novelty</option>
-                    <option>Prefer similar styles</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm mb-1">Number of suggestions</label>
-                  <input type="range" min="1" max="10" defaultValue="3" className="w-full" />
-                </div>
-              </div>
-            </details>
-
             <div className="text-xs text-gray-500">
-              Tip: select the pieces you want the recommender to consider as base items, add a short query (optional), choose occasion and source, then press <strong>Request Recommendation</strong>.
+              Tip: choose the sources you want recommendations from, then select base items and add an optional query. Click <strong>Request Recommendation</strong> to continue.
             </div>
           </div>
         </div>

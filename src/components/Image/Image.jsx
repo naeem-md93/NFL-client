@@ -48,7 +48,7 @@ export default function ImageComponent({setSelectedImage}) {
     );
 
     setImages(images => images.filter(img => img.id !== id));
-    setRefresh(refresh + 1);
+    setRefresh(r => r + 1);
   }
 
   async function clearAll() {
@@ -60,7 +60,7 @@ export default function ImageComponent({setSelectedImage}) {
       )
     }));
     setImages([]);
-    setRefresh(refresh + 1);
+    setRefresh(r => r + 1);
   }
 
   async function handleFilesUpload(e) {
@@ -88,6 +88,21 @@ export default function ImageComponent({setSelectedImage}) {
       }
     }
     e.target.value = null;
+  }
+
+  async function selectImage(id) {
+    try {
+      const res = await fetchData(
+        `selectImage (selecting ${id})`,
+        `${IMAGES_URL}?` + new URLSearchParams({id}).toString(),
+        {method: "GET"}
+      )
+      setSelectedImage(res);
+    } catch (err) {
+      console.error(`Error (selectImage): ${err.statusText}`);
+      setSelectedImage(null);
+    }
+    setRefresh(r => r + 1);
   }
 
   // Functionalities
@@ -144,7 +159,7 @@ export default function ImageComponent({setSelectedImage}) {
                     <button onClick={() => handleDelete(it.id)} className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50 transition-colors duration-300">
                       <span className="material-symbols-outlined text-red-500">delete</span>
                     </button>
-                    <button onClick={() => setSelectedImage(it)} className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-colors duration-300">
+                    <button onClick={() => selectImage(it.id)} className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-colors duration-300">
                       <span className="material-symbols-outlined text-green-500">select_check_box</span>
                     </button>
                   </div>

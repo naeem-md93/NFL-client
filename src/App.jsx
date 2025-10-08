@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import HeaderComponent from "./components/Header/Header.jsx";
 import FlowComponent from "./components/Flow/Flow.jsx";
 import ImageComponent from "./components/Image/Image.jsx";
-import ItemComponent from "./components/Item/Item.jsx";
+import ItemsComponent from "./components/Item/Items.jsx";
 import RecommendComponent from "./components/Recommend/Recommend.jsx";
 
 
@@ -12,21 +12,8 @@ const IMAGES_URL = `${SERVER_URL}/api/closet/images/`;
 
 export default function App() {
   const [selectedImage, setSelectedImage] = useState(null);
-
-  // useEffect(() => {
-  //   console.log("App", "selectedImageId", selectedImageId);
-  //   if (!selectedImageId) return;
-  //   const fetchImage = async () => {
-  //     const resp = await fetch(IMAGES_URL, {
-  //       method: "GET",
-  //       body: JSON.stringify({id: selectedImageId}),
-  //     });
-  //     const data = await resp.json();
-  //     setSelectedImage(data);
-  //   }
-  //   fetchImage();
-  // }, [selectedImageId]);
-
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  console.log(selectedImage);
 
   return (
     <>
@@ -43,15 +30,15 @@ export default function App() {
               setSelectedImage={setSelectedImage}
             />
 
-            {/*{ selectedImage && <ItemComponent*/}
-            {/*  selectedImage={selectedImage}*/}
-            {/*  selectedImageId={selectedImageId}*/}
-            {/*  setSelectedImageId={setSelectedImageId}*/}
-            {/*/>}*/}
+            { selectedImage && <ItemsComponent
+              selectedImage={selectedImage}
+            />}
 
 
-            {/*{ selectedImage && <RecommendComponent*/}
-            {/*/>}*/}
+            <RecommendComponent
+              selectedItems={selectedItems}
+              setSelectedItems={setSelectedItems}
+            />
 
 
 
