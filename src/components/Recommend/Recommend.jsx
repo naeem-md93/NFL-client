@@ -3,11 +3,10 @@ import { fetchData } from "../utils.js";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 const ITEMS_URL = `${SERVER_URL}/api/closet/items/`;
-const RECOMMENDATION_URL = `${SERVER_URL}/api/closet/recommendations/`;
+const RECOMMENDATION_URL = `${SERVER_URL}/api/recommendations/`;
 const DEFAULT_OCCASIONS = ["Casual", "Work", "Date Night", "Formal", "Workout", "Beach", "Party"];
 
-
-export default function RecommendComponent({ selectedItems, setSelectedItems }) {
+export default function RecommendComponent({ selectedItems, setSelectedItems, setSelectedOutfit }) {
   const [items, setItems] = useState([]); // all items fetched from server
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,6 +19,11 @@ export default function RecommendComponent({ selectedItems, setSelectedItems }) 
   const [sources, setSources] = useState(new Set());
   // selectedSources is a Set of currently checked source names
   const [selectedSources, setSelectedSources] = useState(new Set());
+
+  // recommendations will be an array of recommendation objects from server
+  const [recommendations, setRecommendations] = useState([]);
+  // which recommendation (id) is chosen for try-on (optional)
+  const [pickedRecommendationId, setPickedRecommendationId] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -49,9 +53,6 @@ export default function RecommendComponent({ selectedItems, setSelectedItems }) 
       }
     })();
   }, []);
-
-  console.log(items)
-  console.log(sources);
 
   function toggleOccasion(name) {
     setSelectedOccasions((prev) => {
@@ -104,6 +105,51 @@ export default function RecommendComponent({ selectedItems, setSelectedItems }) 
   }
 
   const grouped = groupBySource(filteredItems);
+
+  async function getRecommendations() {
+    setLoading(true);
+    setError("");
+    try {
+      const selectedItemIds = [];
+      // selectedItems expected to be a Set of ids
+      for (const id of (selectedItems || [])) {
+        selectedItemIds.push(id);
+      }
+
+      const data = await fetchData(
+        "getRecommendations",
+        RECOMMENDATION_URL,
+        {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            query: query || "",
+            occasions: [...selectedOccasions],
+            items: selectedItemIds,
+            sources: [...selectedSources],
+          }),
+        }
+      );
+
+      // ensure array result; set empty array if invalid
+      const recs = Array.isArray(data) ? data : (data?.recommendations || []);
+      setRecommendations(recs);
+      // clear current picked recommendation
+      setPickedRecommendationId(null);
+    } catch (err) {
+      console.error("Recommendation error", err);
+      setError("Failed to fetch recommendations.");
+      setRecommendations([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // helper to obtain item image url robustly
+  function pickImageUrl(item) {
+    if (!item) return "https://via.placeholder.com/160x200?text=No+Image";
+    return item.url || item.image || item.src || item.thumbnail || item.img || "https://via.placeholder.com/160x200?text=No+Image";
+  }
 
   return (
     <section className="mb-16">
@@ -251,7 +297,7 @@ export default function RecommendComponent({ selectedItems, setSelectedItems }) 
                   onClick={() => {
                     const custom = prompt("Add custom occasion:");
                     if (!custom) return;
-                    // add to occasions set — since it's stored as Set in state const, we must update selectedOccasions only
+                    // add to selectedOccasions
                     setSelectedOccasions((prev) => {
                       const next = new Set(prev);
                       next.add(custom);
@@ -269,10 +315,7 @@ export default function RecommendComponent({ selectedItems, setSelectedItems }) 
               <button
                 disabled={loading}
                 className={`px-4 py-2 rounded-md text-white ${loading ? "bg-primary-300 cursor-wait" : "bg-primary-600 hover:bg-primary-700"}`}
-                onClick={() => {
-                  // placeholder: call your recommendation API (not implemented here)
-                  alert("Request Recommendation clicked — implement API call.");
-                }}
+                onClick={() => getRecommendations()}
               >
                 {loading ? "Requesting..." : "Request Recommendation"}
               </button>
@@ -331,6 +374,67 @@ export default function RecommendComponent({ selectedItems, setSelectedItems }) 
               Tip: choose the sources you want recommendations from, then select base items and add an optional query. Click <strong>Request Recommendation</strong> to continue.
             </div>
           </div>
+        </div>
+
+        {/* Recommendations result cards (vertical list) */}
+        <div className="mt-6">
+          <h3 className="font-medium mb-3">Recommendations</h3>
+
+          {loading && recommendations.length === 0 ? (
+            <div className="py-6 text-center text-gray-500">Requesting recommendations…</div>
+          ) : null}
+
+          {error ? <div className="text-red-500 mb-3">{error}</div> : null}
+
+          {recommendations.length === 0 ? (
+            <div className="text-sm text-gray-500">No recommendations yet. Click "Request Recommendation" to fetch suggestions.</div>
+          ) : (
+            <div className="space-y-4">
+              {recommendations.map((rec) => {
+                // compute a stable id for card
+                const cardId = rec.id || JSON.stringify(rec.items.map((i) => i.id)).slice(0, 12);
+                return (
+                  <div key={cardId} className={`border rounded-lg p-4 shadow-sm ${pickedRecommendationId === cardId ? "ring-2 ring-primary-300" : ""}`}>
+                    {/* Header: description + compatibility */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{rec.description}</div>
+                        <div className="text-xs text-gray-500 mt-1">Compatibility: {(typeof rec.compatibility === "number" ? (rec.compatibility * 100).toFixed(2) : "N/A")}%</div>
+                      </div>
+
+                      <div className="ml-4 flex-shrink-0">
+                        <button onClick={() => setSelectedOutfit(rec)} className="px-3 py-1 bg-primary-600 text-white rounded text-sm">
+                          Try on
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Vertical images list */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {/* left: stack of thumbnails (vertical) */}
+                      <div className="flex flex-row gap-2 min-w-[80px]">
+                        {Array.isArray(rec.items) && rec.items.length > 0 ? (
+                          rec.items.map((it) => (
+                            <div key={it.id} className="flex flex-col">
+                              <img
+                                key={it.id}
+                                src={`${it.url}`}
+                                alt={it.caption || it.id}
+                                className="w-24 h-28 object-cover rounded"
+                              />
+                              <div className="text-xs text-gray-500">{it.source || ""}</div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-xs text-gray-400">No item images</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </section>
