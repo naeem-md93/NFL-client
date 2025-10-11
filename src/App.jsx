@@ -6,16 +6,32 @@ import ImageComponent from "./components/Image/Image.jsx";
 import ItemsComponent from "./components/Item/Items.jsx";
 import RecommendComponent from "./components/Recommend/Recommend.jsx";
 import TryOnComponent from "./components/TryOn/TryOn.jsx";
+import {fetchData} from "./components/utils.js";
 
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 const IMAGES_URL = `${SERVER_URL}/api/closet/images/`;
 
 export default function App() {
+  const [images, setImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [selectedOutfit, setSelectedOutfit] = useState(null);
-  console.log(selectedImage);
+
+  useEffect(() => {
+    async function loadImages() {
+      const imgs =  await fetchData(
+        "App useEffect(loadImages)",
+        IMAGES_URL,
+        {method: "GET"}
+      );
+      setImages(imgs);
+    }
+    loadImages();
+
+  }, [])
+
+  console.log(images);
 
   return (
     <>
@@ -29,8 +45,11 @@ export default function App() {
             <FlowComponent />
 
             <ImageComponent
-              setSelectedImage={setSelectedImage}
+                images={images}
+                setImages={setImages}
+                setSelectedImage={setSelectedImage}
             />
+
 
             { selectedImage && <ItemsComponent
               selectedImage={selectedImage}
@@ -43,7 +62,9 @@ export default function App() {
               setSelectedOutfit={setSelectedOutfit}
             />
 
-            { selectedOutfit && <TryOnComponent selectedOutfit={selectedOutfit} /> }
+            { selectedOutfit && <TryOnComponent
+              selectedOutfit={selectedOutfit}
+            /> }
 
             <footer className="mt-12 text-center text-sm text-gray-500">
               Demo — switch simulated extraction and recommendation functions to real backends for production.

@@ -5,36 +5,15 @@ import {fetchData} from "../utils.js";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 const IMAGES_URL = `${SERVER_URL}/api/closet/images/`;
+console.log(IMAGES_URL)
 
-
-export default function ImageComponent({setSelectedImage}) {
-  const [refresh, setRefresh] = useState(0);
-  const [images, setImages] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+export default function ImageComponent({images, setImages, setSelectedImage}) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    if (refresh === 0) {
-      (async () => {
-          setIsLoading(true);
-          try {
-            const data = await fetchData(
-              "useEffect (fetch images)",
-              IMAGES_URL,
-              {method: "GET"}
-            );
-            setImages(data);
-          } catch (err) {
-            setImages([]);
-            console.error(`useEffect err: ${err.statusText}`);
-          } finally {
-            setIsLoading(false);
-          }
-        }
-      )();
-    }
-  }, [refresh])
+
+  }, [images])
 
   async function handleDelete(id) {
     await fetchData(
@@ -48,7 +27,6 @@ export default function ImageComponent({setSelectedImage}) {
     );
 
     setImages(images => images.filter(img => img.id !== id));
-    setRefresh(r => r + 1);
   }
 
   async function clearAll() {
@@ -60,13 +38,14 @@ export default function ImageComponent({setSelectedImage}) {
       )
     }));
     setImages([]);
-    setRefresh(r => r + 1);
   }
 
   async function handleFilesUpload(e) {
 
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    console.log(files);
+
 
     setIsUploading(true);
 
@@ -80,7 +59,6 @@ export default function ImageComponent({setSelectedImage}) {
           {method: "POST", body: tmpForm}
         )
         setImages(prev => [...prev, res]);
-        setRefresh(r => r + 1);
       } catch (err) {
         console.error(`Error (handleFilesUpload): ${err.statusText}`);
       } finally {
@@ -102,7 +80,6 @@ export default function ImageComponent({setSelectedImage}) {
       console.error(`Error (selectImage): ${err.statusText}`);
       setSelectedImage(null);
     }
-    setRefresh(r => r + 1);
   }
 
   // Functionalities
@@ -147,35 +124,31 @@ export default function ImageComponent({setSelectedImage}) {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="text-sm text-gray-500">Loading...</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            { images.map((it) => (
-              <div key={it.id} className="border border-gray-200 rounded-lg overflow-hidden group hover:shadow-md transition-shadow duration-300">
-                <div className="relative h-48 bg-gray-100">
-                  <img src={it.url} alt={it.name || `image_${it.id}`} className="w-full h-full object-cover" />
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
-                    <button onClick={() => handleDelete(it.id)} className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50 transition-colors duration-300">
-                      <span className="material-symbols-outlined text-red-500">delete</span>
-                    </button>
-                    <button onClick={() => selectImage(it.id)} className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-colors duration-300">
-                      <span className="material-symbols-outlined text-green-500">select_check_box</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-3">
-                 <div className="flex items-center justify-between mb-2">
-                   <span className="text-sm p-2 border rounded-md w-45 mr-2">{it.name || it.id}</span>
-                   <span className="text-sm p-2 border rounded-md w-25 mr-2 text-center">{it.source}</span>
-                   <span className="text-xs text-gray-500">XXX KB</span>
-                 </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {images.map((it) => (
+            <div key={it.id} className="border border-gray-200 rounded-lg overflow-hidden group hover:shadow-md transition-shadow duration-300">
+              <div className="relative h-48 bg-gray-100">
+                <img src={it.url} alt={it.name || `image_${it.id}`} className="w-full h-full object-cover" />
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
+                  <button onClick={() => handleDelete(it.id)} className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50 transition-colors duration-300">
+                    <span className="material-symbols-outlined text-red-500">delete</span>
+                  </button>
+                  <button onClick={() => selectImage(it.id)} className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-colors duration-300">
+                    <span className="material-symbols-outlined text-green-500">select_check_box</span>
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+
+              <div className="p-3">
+               <div className="flex items-center justify-between mb-2">
+                 <span className="text-sm p-2 border rounded-md w-45 mr-2">{it.name || it.id}</span>
+                 <span className="text-sm p-2 border rounded-md w-25 mr-2 text-center">{it.source}</span>
+                 <span className="text-xs text-gray-500">XXX KB</span>
+               </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   )
