@@ -2,18 +2,27 @@ import {useRef, useState, useEffect} from "react";
 
 import {fetchData} from "../utils.js";
 
-
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-const IMAGES_URL = `${SERVER_URL}/api/closet/images/`;
-console.log(IMAGES_URL)
-
-export default function ImageComponent({images, setImages, setSelectedImage}) {
+export default function ImageComponent(
+  {
+    IMAGES_URL,
+    setSelectedImage
+  }
+) {
+  const [images, setImages] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [refresh, setRefresh] = useState(0);
+
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-
-  }, [images])
+    if (refresh === 0) {
+      const loadImages = async () => {
+        const data = await fetchData("Image|useEffect|loadImages", IMAGES_URL, {method: "GET"});
+        setImages(data);
+      }
+      loadImages();
+    }
+  }, [refresh])
 
   async function handleDelete(id) {
     await fetchData(
@@ -34,55 +43,52 @@ export default function ImageComponent({images, setImages, setSelectedImage}) {
       fetchData(
         `clearAll (deleting ${it.id})`,
         IMAGES_URL,
-        {method: "DELETE", headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: it.id})},
+        {
+          method: "DELETE",
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({id: it.id})
+        },
       )
     }));
-    setImages([]);
   }
 
   async function handleFilesUpload(e) {
 
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    console.log(files);
-
 
     setIsUploading(true);
 
     for (const f of files) {
-      try {
-        const tmpForm = new FormData();
-        tmpForm.append("file", f);
-        const res = await fetchData(
-          `handleFilesUpload (creating ${f.name})`,
-          IMAGES_URL,
-          {method: "POST", body: tmpForm}
-        )
-        setImages(prev => [...prev, res]);
-      } catch (err) {
-        console.error(`Error (handleFilesUpload): ${err.statusText}`);
-      } finally {
-        setIsUploading(false);
-      }
+
+      const tmpForm = new FormData();
+      tmpForm.append("file", f);
+
+      const res = await fetchData(
+        `handleFilesUpload (uploading ${f.name})`,
+        IMAGES_URL,
+        {
+          method: "POST",
+          body: tmpForm
+        }
+      )
+      setImages(prev => [...prev, res]);
     }
     e.target.value = null;
+    setIsUploading(false);
   }
 
   async function selectImage(id) {
-    try {
-      const res = await fetchData(
-        `selectImage (selecting ${id})`,
-        `${IMAGES_URL}?` + new URLSearchParams({id}).toString(),
-        {method: "GET"}
-      )
-      setSelectedImage(res);
-    } catch (err) {
-      console.error(`Error (selectImage): ${err.statusText}`);
-      setSelectedImage(null);
-    }
+    const res = await fetchData(
+      `selectImage (selecting ${id})`,
+      `${IMAGES_URL}?` + new URLSearchParams({id}).toString(),
+      {
+        method: "GET"
+      }
+    )
+    setSelectedImage(res);
   }
 
-  // Functionalities
   function openFilePicker() {
     fileInputRef.current?.click();
   }

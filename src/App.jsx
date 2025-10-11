@@ -11,28 +11,18 @@ import {fetchData} from "./components/utils.js";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 const IMAGES_URL = `${SERVER_URL}/api/closet/images/`;
-console.log(IMAGES_URL);
+const ITEMS_URL = `${SERVER_URL}/api/closet/items/`;
+const RECOMMENDATION_URL = `${SERVER_URL}/api/recommendation/`;
+const TRYON_URL = `${SERVER_URL}/api/tryon/`;
 
 export default function App() {
-  const [images, setImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedItems, setSelectedItems] = useState(new Set());
-  const [selectedOutfit, setSelectedOutfit] = useState(null);
+  // const [selectedItems, setSelectedItems] = useState(new Set());
+  // const [selectedOutfit, setSelectedOutfit] = useState(null);
 
   useEffect(() => {
-    async function loadImages() {
-      const imgs =  await fetchData(
-        "App useEffect(loadImages)",
-        IMAGES_URL,
-        {method: "GET"}
-      );
-      setImages(imgs);
-    }
-    loadImages();
 
   }, [])
-
-  console.log(images);
 
   return (
     <>
@@ -46,26 +36,25 @@ export default function App() {
             <FlowComponent />
 
             <ImageComponent
-                images={images}
-                setImages={setImages}
+                IMAGES_URL={IMAGES_URL}
                 setSelectedImage={setSelectedImage}
             />
 
 
-            { selectedImage && <ItemsComponent
-              selectedImage={selectedImage}
-            />}
+            {/*{ selectedImage && <ItemsComponent*/}
+            {/*  selectedImage={selectedImage}*/}
+            {/*/>}*/}
 
 
-            <RecommendComponent
-              selectedItems={selectedItems}
-              setSelectedItems={setSelectedItems}
-              setSelectedOutfit={setSelectedOutfit}
-            />
+            {/*<RecommendComponent*/}
+            {/*  selectedItems={selectedItems}*/}
+            {/*  setSelectedItems={setSelectedItems}*/}
+            {/*  setSelectedOutfit={setSelectedOutfit}*/}
+            {/*/>*/}
 
-            { selectedOutfit && <TryOnComponent
-              selectedOutfit={selectedOutfit}
-            /> }
+            {/*{ selectedOutfit && <TryOnComponent*/}
+            {/*  selectedOutfit={selectedOutfit}*/}
+            {/*/> }*/}
 
             <footer className="mt-12 text-center text-sm text-gray-500">
               Demo — switch simulated extraction and recommendation functions to real backends for production.
