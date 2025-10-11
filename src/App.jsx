@@ -11,6 +11,7 @@ import {fetchData} from "./components/utils.js";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 const IMAGES_URL = `${SERVER_URL}/api/closet/images/`;
+console.log(IMAGES_URL);
 
 export default function App() {
   const [images, setImages] = useState([]);
