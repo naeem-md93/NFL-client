@@ -15,6 +15,8 @@ const ITEMS_URL = `${SERVER_URL}/api/closet/items/`;
 const RECOMMENDATION_URL = `${SERVER_URL}/api/recommendation/`;
 const TRYON_URL = `${SERVER_URL}/api/tryon/`;
 
+console.log(SERVER_URL);
+
 export default function App() {
   const [selectedImage, setSelectedImage] = useState(null);
   // const [selectedItems, setSelectedItems] = useState(new Set());
