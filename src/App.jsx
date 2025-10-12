@@ -10,6 +10,7 @@ import {fetchData} from "./components/utils.js";
 
 
 const SERVER_URL = "https://nfl-server-dev.up.railway.app";
+// const SERVER_URL = "http://localhost:8000";
 const IMAGES_URL = `${SERVER_URL}/api/closet/images/`;
 const ITEMS_URL = `${SERVER_URL}/api/closet/items/`;
 const RECOMMENDATION_URL = `${SERVER_URL}/api/recommendation/`;
