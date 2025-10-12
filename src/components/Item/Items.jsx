@@ -3,8 +3,6 @@ import React, { useEffect, useState } from "react";
 
 import ItemComponent from "./Item.jsx";
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-const ITEMS_URL = `${SERVER_URL}/api/closet/items/`;
 
 export default function ItemsComponent({ selectedImage }) {
   // keep items as map/object like your original code
