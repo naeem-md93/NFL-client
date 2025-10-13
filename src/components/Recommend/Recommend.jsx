@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { fetchData } from "../utils.js";
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-const ITEMS_URL = `${SERVER_URL}/api/closet/items/`;
-const RECOMMENDATION_URL = `${SERVER_URL}/api/recommendations/`;
 const DEFAULT_OCCASIONS = ["Casual", "Work", "Date Night", "Formal", "Workout", "Beach", "Party"];
 
-export default function RecommendComponent({ selectedItems, setSelectedItems, setSelectedOutfit }) {
+export default function RecommendComponent(
+  {
+    ITEMS_URL,
+    RECOMMENDATION_URL,
+    selectedItems,
+    setSelectedItems,
+    setSelectedOutfit
+  }
+) {
   const [items, setItems] = useState([]); // all items fetched from server
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
